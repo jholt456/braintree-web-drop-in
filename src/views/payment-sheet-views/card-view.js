@@ -23,15 +23,19 @@ CardView.ID = CardView.prototype.ID = constants.paymentOptionIDs.card;
 CardView.prototype.initialize = function () {
   var cvvFieldGroup, postalCodeFieldGroup;
   var cardholderNameField = this.getElementById('cardholder-name-field-group');
+  var countryField = this.getElementById('country-field-group');
   var cardIcons = this.getElementById('card-view-icons');
   var hfOptions = this._generateHostedFieldsOptions();
+  var card = this.model.merchantConfiguration.card;
 
   cardIcons.innerHTML = cardIconHTML;
   this._hideUnsupportedCardIcons();
 
   this.hasCVV = hfOptions.fields.cvv;
-  this.hasCardholderName = Boolean(this.model.merchantConfiguration.card && this.model.merchantConfiguration.card.cardholderName);
+  this.hasCardholderName = Boolean(card && card.cardholderName);
+  this.hasCountry = Boolean(card && card.country);
   this.cardholderNameInput = cardholderNameField.querySelector('input');
+  this.countryInput = countryField.querySelector('input');
   this.cardNumberIcon = this.getElementById('card-number-icon');
   this.cardNumberIconSvg = this.getElementById('card-number-icon-svg');
   this.cvvIcon = this.getElementById('cvv-icon');
@@ -53,6 +57,16 @@ CardView.prototype.initialize = function () {
     this._setupCardholderName(cardholderNameField);
   } else {
     cardholderNameField.parentNode.removeChild(cardholderNameField);
+  }
+
+  if (this.hasCountry || this.client.getConfiguration().gatewayConfiguration.challenges.indexOf('postal_code') !== -1) {
+    if (!this.hasCountry) {
+      this.model.merchantConfiguration.card = card || {};
+      this.model.merchantConfiguration.card.country = {required: true};
+    }
+    this._setupCountry(countryField);
+  } else {
+    countryField.parentNode.removeChild(countryField);
   }
 
   this.model.asyncDependencyStarting();
@@ -107,7 +121,39 @@ CardView.prototype._setupCardholderName = function (cardholderNameField) {
     }.bind(this), false);
   }
 };
+CardView.prototype._setupCountry = function (countryField) {
+  var countryOptions = this.model.merchantConfiguration.card && this.model.merchantConfiguration.card.country;
+  var countryContainer = countryField.querySelector('.braintree-form__hosted-field');
 
+  this.countryInput.addEventListener('keyup', function () {
+    var hasContent = this.countryInput.value.length > 0;
+
+    classlist.toggle(countryContainer, 'braintree-form__field--valid', hasContent);
+
+    if (!countryOptions.required) {
+      return;
+    }
+
+    if (hasContent) {
+      classlist.remove(countryField, 'braintree-form__field-group--has-error');
+    }
+
+    this._sendRequestableEvent();
+  }.bind(this), false);
+
+  if (countryOptions.required) {
+    this.countryInput.addEventListener('blur', function () {
+      // the active element inside the blur event is the docuemnt.body
+      // by taking it out of the event loop, we can detect the new
+      // active element (hosted field or other card view element)
+      setTimeout(function () {
+        if (isCardViewElement() && this.countryInput.value.length === 0) {
+          classlist.add(countryField, 'braintree-form__field-group--has-error');
+        }
+      }.bind(this), 0);
+    }.bind(this), false);
+  }
+};
 CardView.prototype._sendRequestableEvent = function () {
   if (!this._isTokenizing) {
     this.model.setPaymentMethodRequestable({
@@ -267,6 +313,10 @@ CardView.prototype._validateForm = function (showFieldErrors) {
     isValid = false;
   }
 
+  if (!this._validateCountry()) {
+    isValid = false;
+  }
+
   return isValid;
 };
 
@@ -299,6 +349,13 @@ CardView.prototype.tokenize = function () {
 
   if (this.hasCardholderName) {
     tokenizeOptions.cardholderName = this.cardholderNameInput.value;
+  }
+
+  if (this.hasCountry) {
+    if (!tokenizeOptions.billingAddress) {
+      tokenizeOptions.billingAddress = {};
+    }
+    tokenizeOptions.billingAddress.countryName = this.countryInput.value;
   }
 
   self._isTokenizing = true;
@@ -392,6 +449,14 @@ CardView.prototype._validateCardholderName = function () {
   }
 
   return this.cardholderNameInput.value.length > 0;
+};
+
+CardView.prototype._validateCountry = function () {
+  if (!this.hasCountry || !this.model.merchantConfiguration.card.country.required) {
+    return true;
+  }
+
+  return this.countryInput.value.length > 0;
 };
 
 CardView.prototype._onBlurEvent = function (event) {

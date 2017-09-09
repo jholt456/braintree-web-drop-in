@@ -15,6 +15,9 @@ var WHITELISTED_DATA_ATTRIBUTES = [
   'card.cardholderName',
   'card.cardholderName.required',
 
+  'card.country',
+  'card.country.required',
+
   'paypal.amount',
   'paypal.currency',
   'paypal.flow',

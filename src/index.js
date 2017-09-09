@@ -120,6 +120,8 @@ var VERSION = process.env.npm_package_version;
  *
  * @param {boolean|object} [cardholderName] Will enable a cardholder name field above the card number field. If set to an object, you can specify whether or not the field is required. If set to a `true`, it will default the field to being present, but not required.
  * @param {boolean} [cardholderName.required=false] When true, the cardholder name field will be required to request the payment method nonce.
+ * @param {boolean|object} [country] Will enable a country field above the postal code field. If set to an object, you can specify whether or not the field is required. If set to a `true`, it will default the field to being present, but not required.
+ * @param {boolean} [country.required=false] When true, the country  field will be required to request the payment method nonce.
  * @param {object} [overrides.fields] The Hosted Fields [`fields` options](http://braintree.github.io/braintree-web/{@pkg bt-web-version}/module-braintree-web_hosted-fields.html#~fieldOptions). Only `number`, `cvv`, `expirationDate` and `postalCode` can be configured. Each is a [Hosted Fields `field` object](http://braintree.github.io/braintree-web/{@pkg bt-web-version}/module-braintree-web_hosted-fields.html#~field). `selector` cannot be modified.
  * @param {object} [overrides.styles] The Hosted Fields [`styles` options](http://braintree.github.io/braintree-web/{@pkg bt-web-version}/module-braintree-web_hosted-fields.html#~styleOptions).
  */
@@ -390,6 +392,27 @@ var VERSION = process.env.npm_package_version;
  *   container: '#dropin-container',
  *   card: {
  *     cardholderName: {
+ *       required: true
+ *     }
+ *   }
+ * }, callback);
+ * * @example
+ * <caption>Including a country field</caption>
+ * braintree.dropin.create({
+ *   authorization: 'CLIENT_AUTHORIZATION',
+ *   container: '#dropin-container',
+ *   card: {
+ *     country: true
+ *   }
+ * }, callback);
+ *
+ * @example
+ * <caption>Including a required country field</caption>
+ * braintree.dropin.create({
+ *   authorization: 'CLIENT_AUTHORIZATION',
+ *   container: '#dropin-container',
+ *   card: {
+ *     country: {
  *       required: true
  *     }
  *   }

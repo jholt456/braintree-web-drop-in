@@ -212,6 +212,24 @@ describe('CardView', function () {
       }.bind(this));
     });
 
+    it('has country if provided in merchant configuration', function () {
+      this.model.merchantConfiguration.card = {
+        country: true
+      };
+
+      this.view = new CardView({
+        element: this.element,
+        mainView: this.mainView,
+        model: this.model,
+        client: this.client,
+        strings: strings
+      });
+
+      return this.view.initialize().then(function () {
+        expect(this.element.querySelector('[data-braintree-id="country-field-group"]')).to.exist;
+      }.bind(this));
+    });
+
     it('does not include cardholderName if not provided in merchant configuration', function () {
       this.model.merchantConfiguration.card = {};
 
@@ -225,6 +243,22 @@ describe('CardView', function () {
 
       return this.view.initialize().then(function () {
         expect(this.element.querySelector('[data-braintree-id="cardholder-name-field-group"]')).to.not.exist;
+      }.bind(this));
+    });
+
+    it('does not include country if not provided in merchant configuration', function () {
+      this.model.merchantConfiguration.card = {};
+
+      this.view = new CardView({
+        element: this.element,
+        mainView: this.mainView,
+        model: this.model,
+        client: this.client,
+        strings: strings
+      });
+
+      return this.view.initialize().then(function () {
+        expect(this.element.querySelector('[data-braintree-id="country-field-group"]')).to.not.exist;
       }.bind(this));
     });
 
@@ -659,6 +693,7 @@ describe('CardView', function () {
         _generateHostedFieldsOptions: CardView.prototype._generateHostedFieldsOptions,
         _validateForm: this.sandbox.stub(),
         _validateCardholderName: this.sandbox.stub().returns(true),
+        _validateCountry: this.sandbox.stub().returns(true),
         _sendRequestableEvent: CardView.prototype._sendRequestableEvent,
         getElementById: BaseView.prototype.getElementById,
         hideFieldError: CardView.prototype.hideFieldError,
@@ -1657,8 +1692,10 @@ describe('CardView', function () {
         model: this.model,
         _validateForm: CardView.prototype._validateForm,
         _validateCardholderName: CardView.prototype._validateCardholderName,
+        _validateCountry: CardView.prototype._validateCountry,
         _sendRequestableEvent: CardView.prototype._sendRequestableEvent,
         _setupCardholderName: this.sandbox.stub(),
+        _setupCountry: this.sandbox.stub(),
         client: {
           getConfiguration: fake.configuration
         },
@@ -1667,6 +1704,7 @@ describe('CardView', function () {
           card: {}
         },
         hasCardholderName: false,
+        hasCountry: false,
         showFieldError: CardView.prototype.showFieldError,
         strings: strings
       };
@@ -1762,6 +1800,35 @@ describe('CardView', function () {
       }.bind(this));
     });
 
+    it('calls callback with error when country name is required and the input is empty', function () {
+      this.context.hostedFieldsInstance.getState.returns({
+        cards: [{type: 'visa'}],
+        fields: {
+          number: {
+            isValid: true
+          },
+          expirationDate: {
+            isValid: true
+          }
+        }
+      });
+      this.context.hasCountry = true;
+      this.context.model.merchantConfiguration.card = {
+        country: {
+          required: true
+        }
+      };
+      this.context.countryInput = {value: ''};
+
+      this.sandbox.stub(this.context.model, 'reportError');
+
+      return CardView.prototype.tokenize.call(this.context).then(throwIfResolves).catch(function (err) {
+        expect(this.fakeHostedFieldsInstance.tokenize).to.not.be.called;
+        expect(this.context.model.reportError).to.be.calledWith('hostedFieldsFieldsInvalidError');
+        expect(err.message).to.equal('No payment method is available.');
+      }.bind(this));
+    });
+
     it('does not error if cardholder name is empty, but not required', function () {
       this.context.hostedFieldsInstance.getState.returns({
         cards: [{type: 'visa'}],
@@ -1790,6 +1857,34 @@ describe('CardView', function () {
       }.bind(this));
     });
 
+    it('does not error if country is empty, but not required', function () {
+      this.context.hostedFieldsInstance.getState.returns({
+        cards: [{type: 'visa'}],
+        fields: {
+          number: {
+            isValid: true
+          },
+          expirationDate: {
+            isValid: true
+          }
+        }
+      });
+      this.context.hasCountry = true;
+      this.context.model.merchantConfiguration.card = {
+        country: {
+          required: false
+        }
+      };
+      this.context.countryInput = {value: ''};
+
+      this.sandbox.stub(this.context.model, 'reportError');
+
+      return CardView.prototype.tokenize.call(this.context).then(function () {
+        expect(this.context.model.reportError).to.not.be.called;
+        expect(this.fakeHostedFieldsInstance.tokenize).to.be.calledOnce;
+      }.bind(this));
+    });
+
     it('does not error if cardholder name is not included', function () {
       this.context.hostedFieldsInstance.getState.returns({
         cards: [{type: 'visa'}],
@@ -1803,6 +1898,28 @@ describe('CardView', function () {
         }
       });
       this.context.hasCardholderName = false;
+
+      this.sandbox.stub(this.context.model, 'reportError');
+
+      return CardView.prototype.tokenize.call(this.context).then(function () {
+        expect(this.context.model.reportError).to.not.be.called;
+        expect(this.fakeHostedFieldsInstance.tokenize).to.be.calledOnce;
+      }.bind(this));
+    });
+
+    it('does not error if country is not included', function () {
+      this.context.hostedFieldsInstance.getState.returns({
+        cards: [{type: 'visa'}],
+        fields: {
+          number: {
+            isValid: true
+          },
+          expirationDate: {
+            isValid: true
+          }
+        }
+      });
+      this.context.hasCountry = false;
 
       this.sandbox.stub(this.context.model, 'reportError');
 

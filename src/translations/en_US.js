@@ -10,6 +10,7 @@ module.exports = {
   fieldEmptyForCvv: 'Please fill out a CVV.',
   fieldEmptyForExpirationDate: 'Please fill out an expiration date.',
   fieldEmptyForCardholderName: 'Please fill out a cardholder name.',
+  fieldEmptyForCountry: 'Please fill out a country name',
   fieldEmptyForNumber: 'Please fill out a card number.',
   fieldEmptyForPostalCode: 'Please fill out a postal code.',
   fieldInvalidForCvv: 'This security code is not valid.',
@@ -27,6 +28,7 @@ module.exports = {
   unsupportedCardTypeError: 'This card type is not supported. Please try another card.',
   // Card form
   cardholderNameLabel: 'Cardholder Name',
+  countryLabel: 'Country',
   cardNumberLabel: 'Card Number',
   cvvLabel: 'CVV',
   cvvThreeDigitLabelSubheading: '(3 digits)',
@@ -34,6 +36,7 @@ module.exports = {
   expirationDateLabel: 'Expiration Date',
   expirationDateLabelSubheading: '(MM/YY)',
   cardholderNamePlaceholder: 'Cardholder Name',
+  countryPlaceholder: 'Country',
   expirationDatePlaceholder: 'MM/YY',
   postalCodeLabel: 'Postal Code',
   payWithCard: 'Pay with card',
